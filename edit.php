@@ -1,0 +1,74 @@
+<?php
+require_once __DIR__ . '/config.php';
+if (empty($_SESSION['user'])) { header('Location: login.php'); exit; }
+
+$id = intval($_GET['id'] ?? 0);
+if (!$id) { header('Location: list.php'); exit; }
+
+$res = $db->query("SELECT * FROM borrow_list WHERE id = {$id} LIMIT 1");
+$row = $res ? $res->fetch_assoc() : null;
+if (!$row) { header('Location: list.php'); exit; }
+
+$success = false;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $customer = $_POST['customer_name'] ?? '';
+    $book = $_POST['book_name'] ?? '';
+    $qty = intval($_POST['book_qty'] ?? 1);
+    $borrow = $_POST['borrow_date'] ?? null;
+    $return = $_POST['return_date'] ?? null;
+
+    $data = [
+      'customer_name' => $customer,
+      'book_name' => $book,
+      'book_qty' => $qty,
+      'borrow_date' => $borrow,
+      'return_date' => $return
+    ];
+    $ok = $db->update('borrow_list', $data, ['id' => $id]);
+    if ($ok) { $success = true; }
+    $res = $db->select('borrow_list', '*', ['id' => $id]);
+    $row = $res ? $res->fetch_assoc() : null;
+}
+?>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h2>Edit</h2>
+    <?php if ($success): ?>
+      <div class="alert alert-success">✅ แก้ไขข้อมูลสำเร็จ</div>
+    <?php endif; ?>
+    <form method="post" onsubmit="return confirm('ยืนยันว่าจะแก้ไขใช่หรือไม่?')">
+      <div class="mb-3">
+        <label class="form-label">ชื่อลูกค้าที่ยืม</label>
+        <input name="customer_name" class="form-control" required value="<?= htmlspecialchars($row['customer_name']) ?>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">ชื่อหนังสือที่ยืม</label>
+        <input name="book_name" class="form-control" required value="<?= htmlspecialchars($row['book_name']) ?>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">จำนวน</label>
+        <input name="book_qty" type="number" class="form-control" value="<?= intval($row['book_qty']) ?>" min="1">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">วันที่ยืม</label>
+        <input name="borrow_date" type="date" class="form-control" value="<?= htmlspecialchars($row['borrow_date']) ?>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">วันที่ต้องคืน</label>
+        <input name="return_date" type="date" class="form-control" value="<?= htmlspecialchars($row['return_date']) ?>">
+      </div>
+      <button class="btn btn-primary">Update</button>
+      <a href="list.php" class="btn btn-secondary">Back</a>
+    </form>
+  </div>
+</body>
+</html>

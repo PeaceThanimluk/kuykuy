@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kuykuy-php-web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    restart: unless-stopped
+    environment:
+      APACHE_RUN_USER: www-data
+      APACHE_RUN_GROUP: www-data
+      # DB settings for the web container
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: rootpass
+      DB_NAME: kuykuy_db
+    depends_on:
+      - db
+  db:
+    image: mysql:8.0
+    container_name: kuykuy-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: kuykuy_db
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db_init.sql:/docker-entrypoint-initdb.d/db_init.sql:ro
+    ports:
+      - "3306:3306"
+
+volumes:
+  db_data:
